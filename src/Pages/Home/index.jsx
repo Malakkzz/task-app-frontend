@@ -8,7 +8,6 @@ import {
   Container,
   FormHeader,
   FormPopup,
-//   GroupTasksButton,
   Header,
   Input,
   Select,
@@ -18,8 +17,10 @@ import {
   TableRow,
   TaskTable,
 } from "./styles";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createTask, getAllTasks } from "../../utils/api/tasks";
+
 export default function Home() {
-  const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({
     taskName: "",
     assignee: "",
@@ -27,9 +28,9 @@ export default function Home() {
     issueDate: "",
     hoursSpent: 0,
     project: "",
-    difficulty: "Easy",
+    difficulty: "EASY",
   });
-
+  const queryClient=useQueryClient();
   
   
   
@@ -46,14 +47,15 @@ export default function Home() {
   // Function to handle task form submission
   const handleAddTask = (e) => {
     e.preventDefault();
-    setTasks([
-      ...tasks,
-      {
-        ...newTask,
-        id: tasks.length + 1,
-        issueDate: new Date().toLocaleDateString(),
-      },
-    ]);
+    const data={
+      name:newTask.taskName,
+      assignee:newTask.assignee,
+      dueDate:new Date(newTask.dueDate),
+      hours:parseInt(newTask.hoursSpent),
+      project:newTask.project,
+      difficulty:newTask.difficulty
+      
+    }
     setNewTask({
       taskName: "",
       assignee: "",
@@ -61,14 +63,30 @@ export default function Home() {
       issueDate: "",
       hoursSpent: 0,
       project: "",
-      difficulty: "Easy",
+      difficulty: "EASY",
     });
+    createTaskFn(data);
     setShowForm(false); // Hide the form after task is added
+
   };
   // Toggle form visibility
   const toggleForm = () => {
     setShowForm(!showForm);
   };
+  const {data:tasksData}=useQuery({
+    queryKey:["get-all-tasks"],
+    queryFn:getAllTasks
+  })
+  const{mutate:createTaskFn,isPending}=useMutation({
+    mutationKey:["create-task"],
+    mutationFn:createTask,
+    onSuccess:()=>{
+      queryClient.invalidateQueries({
+        queryKey:["get-all-tasks"]
+      })
+
+    }
+  })
   return (
     <Container>
       <Header>Task Management</Header>
@@ -83,13 +101,13 @@ export default function Home() {
           <TableHeaderCell>Project</TableHeaderCell>
           <TableHeaderCell>Difficulty</TableHeaderCell>
         </TableHeader>
-        {tasks.map((task) => (
+        {tasksData?.data.map((task) => (
           <TableRow key={task.id}>
-            <TableCell>{task.taskName}</TableCell>
+            <TableCell>{task.name}</TableCell>
             <TableCell>{task.assignee}</TableCell>
             <TableCell>{task.dueDate}</TableCell>
-            <TableCell>{task.issueDate}</TableCell>
-            <TableCell>{task.hoursSpent}</TableCell>
+            <TableCell>{task.createdAt}</TableCell>
+            <TableCell>{task.hours}</TableCell>
             <TableCell>{task.project}</TableCell>
             <TableCell>{task.difficulty}</TableCell>
           </TableRow>
@@ -149,11 +167,11 @@ export default function Home() {
                 value={newTask.difficulty}
                 onChange={handleInputChange}
               >
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
+                <option value="EASY">Easy</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HARD">Hard</option>
               </Select>
-              <Button type="submit">Add Task</Button>
+              <Button type="submit" disabled={isPending}>Add Task</Button>
             </AddTaskForm>
           </FormPopup>
         </>
