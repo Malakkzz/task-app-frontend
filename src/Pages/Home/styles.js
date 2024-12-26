@@ -34,7 +34,7 @@ export const TableHeaderCell = styled.div`
 
 export const TableRow = styled.div`
   display: table-row;
-  cursor: move; 
+  cursor: move;
 `;
 
 export const TableCell = styled.div`

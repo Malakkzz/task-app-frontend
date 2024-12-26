@@ -17,8 +17,9 @@ import {
   TableRow,
   TaskTable,
 } from "./styles";
+import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTask, getAllTasks } from "../../utils/api/tasks";
+import { createTask, getAllTasks, reorderTask } from "../../utils/api/tasks";
 
 export default function Home() {
   const [newTask, setNewTask] = useState({
@@ -30,10 +31,7 @@ export default function Home() {
     project: "",
     difficulty: "EASY",
   });
-  const queryClient=useQueryClient();
-  
-  
-  
+  const queryClient = useQueryClient();
 
   const [showForm, setShowForm] = useState(false); // State to toggle form visibility
   // Function to handle task form input change
@@ -47,15 +45,14 @@ export default function Home() {
   // Function to handle task form submission
   const handleAddTask = (e) => {
     e.preventDefault();
-    const data={
-      name:newTask.taskName,
-      assignee:newTask.assignee,
-      dueDate:new Date(newTask.dueDate),
-      hours:parseInt(newTask.hoursSpent),
-      project:newTask.project,
-      difficulty:newTask.difficulty
-      
-    }
+    const data = {
+      name: newTask.taskName,
+      assignee: newTask.assignee,
+      dueDate: new Date(newTask.dueDate),
+      hours: parseInt(newTask.hoursSpent),
+      project: newTask.project,
+      difficulty: newTask.difficulty,
+    };
     setNewTask({
       taskName: "",
       assignee: "",
@@ -67,26 +64,47 @@ export default function Home() {
     });
     createTaskFn(data);
     setShowForm(false); // Hide the form after task is added
-
   };
   // Toggle form visibility
   const toggleForm = () => {
     setShowForm(!showForm);
   };
-  const {data:tasksData}=useQuery({
-    queryKey:["get-all-tasks"],
-    queryFn:getAllTasks
-  })
-  const{mutate:createTaskFn,isPending}=useMutation({
-    mutationKey:["create-task"],
-    mutationFn:createTask,
-    onSuccess:()=>{
+  const { data: tasksData, isLoading: isGettingTasks } = useQuery({
+    queryKey: ["get-all-tasks"],
+    queryFn: getAllTasks,
+  });
+  const { mutate: createTaskFn, isPending: isCreating } = useMutation({
+    mutationKey: ["create-task"],
+    mutationFn: createTask,
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey:["get-all-tasks"]
-      })
+        queryKey: ["get-all-tasks"],
+      });
+    },
+  });
 
-    }
-  })
+  const { mutate: reorderTaskFn } = useMutation({
+    mutationKey: ["reorder-task"],
+    mutationFn: reorderTask,
+  });
+
+  const handleOnDragEnd = (result) => {
+    if (!result.destination) return;
+    const items = Array.from(tasksData.data);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    queryClient.setQueryData(["get-all-tasks"], {
+      data: items,
+    });
+
+    reorderTaskFn(
+      items.map((item, index) => ({
+        id: item.id,
+        order: index + 1,
+      }))
+    );
+  };
+
   return (
     <Container>
       <Header>Task Management</Header>
@@ -101,17 +119,44 @@ export default function Home() {
           <TableHeaderCell>Project</TableHeaderCell>
           <TableHeaderCell>Difficulty</TableHeaderCell>
         </TableHeader>
-        {tasksData?.data.map((task) => (
-          <TableRow key={task.id}>
-            <TableCell>{task.name}</TableCell>
-            <TableCell>{task.assignee}</TableCell>
-            <TableCell>{task.dueDate}</TableCell>
-            <TableCell>{task.createdAt}</TableCell>
-            <TableCell>{task.hours}</TableCell>
-            <TableCell>{task.project}</TableCell>
-            <TableCell>{task.difficulty}</TableCell>
-          </TableRow>
-        ))}
+        {!isGettingTasks && (
+          <DragDropContext onDragEnd={handleOnDragEnd}>
+            <Droppable
+              droppableId="tasks"
+              isDropDisabled={false}
+              isCombineEnabled={false}
+            >
+              {(provided) => (
+                <span {...provided.droppableProps} ref={provided.innerRef}>
+                  {tasksData?.data.map((task, index) => {
+                    const key = `${index}${task.createdAt}`;
+                    return (
+                      <Draggable key={key} draggableId={key} index={index}>
+                        {(provided) => (
+                          <TableRow
+                            key={task.id}
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <TableCell>{task.name}</TableCell>
+                            <TableCell>{task.assignee}</TableCell>
+                            <TableCell>{task.dueDate}</TableCell>
+                            <TableCell>{task.createdAt}</TableCell>
+                            <TableCell>{task.hours}</TableCell>
+                            <TableCell>{task.project}</TableCell>
+                            <TableCell>{task.difficulty}</TableCell>
+                          </TableRow>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                  {provided.placeholder}
+                </span>
+              )}
+            </Droppable>
+          </DragDropContext>
+        )}
       </TaskTable>
 
       <AddTaskButton onClick={toggleForm}>Add Task</AddTaskButton>
@@ -171,7 +216,9 @@ export default function Home() {
                 <option value="MEDIUM">Medium</option>
                 <option value="HARD">Hard</option>
               </Select>
-              <Button type="submit" disabled={isPending}>Add Task</Button>
+              <Button type="submit" disabled={isCreating}>
+                Add Task
+              </Button>
             </AddTaskForm>
           </FormPopup>
         </>
