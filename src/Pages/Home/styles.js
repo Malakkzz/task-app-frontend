@@ -1,47 +1,5 @@
-// Styled components for the Task Page
 import styled from "styled-components";
 import { IoCloseCircleOutline } from "react-icons/io5";
-export const Container = styled.div`
-  width: 80%;
-  margin: 0 auto;
-  padding: 20px;
-`;
-
-export const Header = styled.h1`
-  text-align: center;
-  margin-bottom: 20px;
-`;
-
-export const TaskTable = styled.div`
-  margin-top: 30px;
-  display: table;
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-export const TableHeader = styled.div`
-  display: table-row;
-  background-color: #f4f4f4;
-`;
-
-export const TableHeaderCell = styled.div`
-  display: table-cell;
-  padding: 12px;
-  text-align: left;
-  font-weight: bold;
-  border: 1px solid #ddd;
-`;
-
-export const TableRow = styled.div`
-  display: table-row;
-  cursor: move;
-`;
-
-export const TableCell = styled.div`
-  display: table-cell;
-  padding: 12px;
-  border: 1px solid #ddd;
-`;
 
 export const AddTaskButton = styled.button`
   padding: 10px 20px;
@@ -51,7 +9,7 @@ export const AddTaskButton = styled.button`
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
-  position: absolute;
+  position: fixed;
   bottom: 20px;
   right: 20px;
 
@@ -67,7 +25,7 @@ export const Backdrop = styled.div`
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px); /* Apply background blur */
+  backdrop-filter: blur(10px);
   z-index: 999;
 `;
 export const FormPopup = styled.div`
@@ -93,57 +51,11 @@ export const CloseIcon = styled(IoCloseCircleOutline)`
   color: black;
 
   &:hover {
-    color: #333; /* Slightly darkened color on hover */
+    color: #333;
   }
 `;
 export const FormHeader = styled.h2`
   text-align: center;
   margin-bottom: 20px;
   color: #333;
-`;
-export const AddTaskForm = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-export const Input = styled.input`
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 16px;
-  background-color: #f9f9f9;
-
-  &:focus {
-    border-color: #4caf50;
-    outline: none;
-  }
-`;
-
-export const Select = styled.select`
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 16px;
-  background-color: #f9f9f9;
-
-  &:focus {
-    border-color: #4caf50;
-    outline: none;
-  }
-`;
-
-export const Button = styled.button`
-  padding: 12px 20px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #45a049;
-  }
 `;
